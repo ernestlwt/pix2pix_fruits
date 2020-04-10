@@ -69,8 +69,8 @@ validation_data_dir = "/home/ernestlwt/data/coco/val2017/"
 training_annotation_file = "/home/ernestlwt/data/coco/annotations/instances_train2017.json"
 validation_annotation_file = "/home/ernestlwt/data/coco/annotations/instances_val2017.json"
 
-save_train_dir = "./train/"
-save_val_dir = "./val/"
+save_train_dir = "./data/train/"
+save_val_dir = "./data/val/"
 
 coco_val = COCO(validation_annotation_file)
 coco_train = COCO(training_annotation_file)

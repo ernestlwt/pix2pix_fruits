@@ -24,4 +24,4 @@ training_annotation_file
 validation_annotation_file
 ```
 1. On your terminal, run `python proces_data.py`
-1. The images will now be saved inside the `train` and `val` folders
+1. The images will now be saved inside the `data/train` and `data/val` folders
