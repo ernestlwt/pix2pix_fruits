@@ -1,0 +1,9 @@
+name: pix2pix_env
+channels:
+  - conda-forge
+  - anaconda
+  - defaults
+dependencies:
+  - pycocotools=2.0.0
+  - tensorflow-gpu=2.1.0
+  - opencv=4.2.0
