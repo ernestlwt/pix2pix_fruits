@@ -1,19 +1,13 @@
 from pycocotools.coco import COCO
 import numpy as np
 import cv2
+import json
 
 BANANA_COLOR = (0, 255, 0) # green
 APPLE_COLOR = (0, 0, 255) # red
 ORANGE_COLOR = (255, 0, 0) # blue
 
-def create_blank_image(width, height):
-    image = np.zeros((height, width, 3), np.uint8)
-    image[:] = tuple((255, 255, 255))
-    return image
-
-def create_abstract_image(coco, coco_image):
-    image = create_blank_image(width=coco_image['width'], height=coco_image['height'])
-
+def create_abstract_image(coco, coco_image, target_image):
     # get all image containing apple, banana, orange
     apple_category = coco.getCatIds(catNms=['apple'])[0]
     banana_category = coco.getCatIds(catNms=['banana'])[0]
@@ -27,13 +21,13 @@ def create_abstract_image(coco, coco_image):
         points = np.reshape(segmentation, (len(segmentation)//2, 2))
         points = points.reshape((-1, 1, 2))
         if annotation['category_id'] == apple_category:
-            cv2.fillPoly(image, np.int32([points]), APPLE_COLOR, 8)
+            cv2.fillPoly(target_image, np.int32([points]), APPLE_COLOR, 8)
         elif annotation['category_id'] == banana_category:
-            cv2.fillPoly(image, np.int32([points]), BANANA_COLOR, 8)
+            cv2.fillPoly(target_image, np.int32([points]), BANANA_COLOR, 8)
         elif annotation['category_id'] == orange_category:
-            cv2.fillPoly(image, np.int32([points]), ORANGE_COLOR, 8)
+            cv2.fillPoly(target_image, np.int32([points]), ORANGE_COLOR, 8)
 
-    return image
+    return target_image
 
 def get_fruit_images_id(coco):
     categories = coco.loadCats(coco.getCatIds())
@@ -51,6 +45,8 @@ def get_fruit_images_id(coco):
     return fruit_images_id
 
 def generate_dataset(coco, source_dir, target_dir, coco_images_id):
+    file_names = []
+
     for coco_image_id in coco_images_id:
         # open image from coco
         coco_image = coco.loadImgs(coco_image_id)[0]
@@ -58,10 +54,12 @@ def generate_dataset(coco, source_dir, target_dir, coco_images_id):
         # save original image into ground_truth
         cv2.imwrite(target_dir + "ground_truth/" + coco_image['file_name'], original_image)
         # generate abstract_image
-        abstract_image = create_abstract_image(coco, coco_image)
+        abstract_image = create_abstract_image(coco, coco_image, original_image)
         # save into abstract images
         cv2.imwrite(target_dir + "abstract_images/" + coco_image['file_name'], abstract_image)
+        file_names.append(coco_image['file_name'])
 
+    return file_names
 
 # edit these base on your own configurations
 training_data_dir = "/home/ernestlwt/data/coco/train2017/"
@@ -71,12 +69,19 @@ validation_annotation_file = "/home/ernestlwt/data/coco/annotations/instances_va
 
 save_train_dir = "./data/train/"
 save_val_dir = "./data/val/"
+save_annotation_file = "./data/annotations.json"
 
 coco_val = COCO(validation_annotation_file)
 coco_train = COCO(training_annotation_file)
 
 val_images_id = get_fruit_images_id(coco_val)
-generate_dataset(coco_val, validation_data_dir, save_val_dir, val_images_id)
+val_file_names = generate_dataset(coco_val, validation_data_dir, save_val_dir, val_images_id)
 
 train_images_id = get_fruit_images_id(coco_train)
-generate_dataset(coco_train, training_data_dir, save_train_dir, train_images_id)
+train_file_names = generate_dataset(coco_train, training_data_dir, save_train_dir, train_images_id)
+
+with open(save_annotation_file, 'w') as file:
+    data = {}
+    data['training'] = train_file_names
+    data['validation'] = val_file_names
+    json.dump(data, file)
